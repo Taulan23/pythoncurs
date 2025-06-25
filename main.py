@@ -14,9 +14,9 @@ from disease_prediction import DiseasePrediction
 class MedicalSystemApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("Система диагностики лёгочных заболеваний v2.0")
-        self.root.geometry("1200x800")
-        self.root.minsize(1000, 700)
+        self.root.title("Система диагностики заболеваний после Covid-инфекции")
+        self.root.geometry("1920x720")
+        self.root.minsize(1600, 650)
         
         # Создание базы данных при первом запуске
         self.init_database()
@@ -235,56 +235,64 @@ class MedicalSystemApp:
             widget.destroy()
         
         # Заголовок
-        title_frame = tk.Frame(self.root, bg='lightblue', height=150)
+        title_frame = tk.Frame(self.root, bg='lightblue', height=120)
         title_frame.pack(fill='x', padx=10, pady=5)
         title_frame.pack_propagate(False)
         
         title_label = tk.Label(title_frame, 
                               text="АНАЛИЗ И АЛГОРИТМИЗАЦИЯ\nЛЕЧЕБНО-ПРОФИЛАКТИЧЕСКИХ\nМЕРОПРИЯТИЙ У КОМОРБИДНЫХ ПАЦИЕНТОВ\nПОСЛЕ ПЕРЕНЕСЕННОЙ COVID-\nИНФЕКЦИИ",
-                              font=('Arial', 18, 'bold'),
+                              font=('Arial', 16, 'bold'),
                               bg='lightblue',
                               justify='center')
         title_label.pack(expand=True)
         
-        # Кнопки меню
+        # Кнопки меню - располагаем в 2 колонки для экономии места
         buttons_frame = tk.Frame(self.root)
-        buttons_frame.pack(expand=True, pady=50)
+        buttons_frame.pack(expand=True, pady=30)
         
-        btn_about = tk.Button(buttons_frame, text="О программе", 
-                             font=('Arial', 16), width=25, height=2,
+        # Левая колонка
+        left_frame = tk.Frame(buttons_frame)
+        left_frame.pack(side='left', padx=50)
+        
+        btn_about = tk.Button(left_frame, text="О программе", 
+                             font=('Arial', 14), width=30, height=2,
                              command=self.show_about)
-        btn_about.pack(pady=10)
+        btn_about.pack(pady=8)
         
-        btn_patient = tk.Button(buttons_frame, text="Карта пациента", 
-                               font=('Arial', 16), width=25, height=2,
+        btn_patient = tk.Button(left_frame, text="Карта пациента", 
+                               font=('Arial', 14), width=30, height=2,
                                command=self.show_patient_card)
-        btn_patient.pack(pady=10)
+        btn_patient.pack(pady=8)
         
-        btn_survey = tk.Button(buttons_frame, text="Опрос коморбидных пациентов", 
-                              font=('Arial', 16), width=25, height=2,
+        btn_survey = tk.Button(left_frame, text="Опрос коморбидных пациентов", 
+                              font=('Arial', 14), width=30, height=2,
                               command=self.show_patient_survey)
-        btn_survey.pack(pady=10)
+        btn_survey.pack(pady=8)
         
-        btn_prediction = tk.Button(buttons_frame, text="Прогноз заболеваемости", 
-                                  font=('Arial', 16), width=25, height=2,
+        btn_prediction = tk.Button(left_frame, text="Прогноз заболеваемости", 
+                                  font=('Arial', 14), width=30, height=2,
                                   bg='lightgreen',
                                   command=self.show_disease_prediction)
-        btn_prediction.pack(pady=10)
+        btn_prediction.pack(pady=8)
         
-        btn_print = tk.Button(buttons_frame, text="Печать данных пациента", 
-                             font=('Arial', 16), width=25, height=2,
+        # Правая колонка
+        right_frame = tk.Frame(buttons_frame)
+        right_frame.pack(side='right', padx=50)
+        
+        btn_print = tk.Button(right_frame, text="Печать данных пациента", 
+                             font=('Arial', 14), width=30, height=2,
                              command=self.print_module.print_patient_data)
-        btn_print.pack(pady=10)
+        btn_print.pack(pady=8)
         
-        btn_manual = tk.Button(buttons_frame, text="Руководство пользователя", 
-                              font=('Arial', 16), width=25, height=2,
+        btn_manual = tk.Button(right_frame, text="Руководство пользователя", 
+                              font=('Arial', 14), width=30, height=2,
                               command=self.show_user_manual)
-        btn_manual.pack(pady=10)
+        btn_manual.pack(pady=8)
         
-        btn_exit = tk.Button(buttons_frame, text="Выход", 
-                            font=('Arial', 16), width=25, height=2,
+        btn_exit = tk.Button(right_frame, text="Выход", 
+                            font=('Arial', 14), width=30, height=2,
                             command=self.root.quit)
-        btn_exit.pack(pady=10)
+        btn_exit.pack(pady=8)
     
     def show_about(self):
         """Окно 'О программе'"""

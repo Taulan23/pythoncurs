@@ -71,7 +71,7 @@ class PrintModule:
             # Если нет в новой таблице, проверяем старую
             if not anamnesis_data:
                 cursor.execute("SELECT * FROM anamnesis WHERE patient_id=?", (self.parent_app.current_patient_id,))
-                anamnesis_data = cursor.fetchone()
+            anamnesis_data = cursor.fetchone()
             
             # Коморбидные состояния
             cursor.execute("SELECT * FROM comorbidities WHERE patient_id=?", (self.parent_app.current_patient_id,))
@@ -148,7 +148,7 @@ class PrintModule:
 Дата печати:        {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
 
 ╔══════════════════════════════════════════════════════════════════════════════╗
-║       СИСТЕМА ДИАГНОСТИКИ ЛЁГОЧНЫХ ЗАБОЛЕВАНИЙ                              ║
+║       СИСТЕМА ДИАГНОСТИКИ ЗАБОЛЕВАНИЙ ПОСЛЕ COVID-ИНФЕКЦИИ                  ║
 ║       Разработчик: ст. мБС-231                                              ║
 ╚══════════════════════════════════════════════════════════════════════════════╝
 """
@@ -218,12 +218,12 @@ class PrintModule:
                         symptoms.append(f"Тяжесть COVID-19: {covid_severity}")
             else:
                 # Обработка старой таблицы
-                if anamnesis[2]: symptoms.append("COVID-19")
-                if anamnesis[3]: symptoms.append("Тяжесть заболевания")
-                if anamnesis[4]: symptoms.append("Утомляемость")
-                if anamnesis[5]: symptoms.append("Нарушения глюкозы")
-                if anamnesis[6]: symptoms.append("Повышенный креатинин")
-                if anamnesis[7]: symptoms.append("Низкий гемоглобин")
+            if anamnesis[2]: symptoms.append("COVID-19")
+            if anamnesis[3]: symptoms.append("Тяжесть заболевания")
+            if anamnesis[4]: symptoms.append("Утомляемость")
+            if anamnesis[5]: symptoms.append("Нарушения глюкозы")
+            if anamnesis[6]: symptoms.append("Повышенный креатинин")
+            if anamnesis[7]: symptoms.append("Низкий гемоглобин")
             
             if symptoms:
                 report += "Выявленные симптомы и отклонения:\n"
@@ -329,6 +329,12 @@ class PrintModule:
                     covid_severity = anamnesis[15]
                     if covid_severity and covid_severity.strip():
                         symptoms.append(f"Тяжесть COVID-19: {covid_severity}")
+                
+                # Добавляем информацию о АД
+                if len(anamnesis) > 24 and anamnesis[24]:  # ad_value поле
+                    ad_value = anamnesis[24]
+                    if ad_value and ad_value.strip():
+                        symptoms.append(f"АД: {ad_value} мм.рт.ст.")
             
             if symptoms:
                 report += "Выявленные симптомы:\n"
@@ -544,6 +550,12 @@ class PrintModule:
                     covid_severity = anamnesis[23]
                     if covid_severity and covid_severity.strip():
                         symptoms.append(f"Тяжесть COVID-19: {covid_severity}")
+                
+                # Добавляем информацию о АД
+                if len(anamnesis) > 24 and anamnesis[24]:  # ad_value поле
+                    ad_value = anamnesis[24]
+                    if ad_value and ad_value.strip():
+                        symptoms.append(f"АД: {ad_value} мм.рт.ст.")
             
             if symptoms:
                 report += "Выявленные симптомы:\n"

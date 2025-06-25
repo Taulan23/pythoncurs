@@ -340,6 +340,7 @@ class MedicalDataManager:
                     chest_pain INTEGER DEFAULT 0,
                     blood_in_stool INTEGER DEFAULT 0,
                     dyspnea INTEGER DEFAULT 0,
+                    ad_value TEXT DEFAULT '',
                     FOREIGN KEY (patient_id) REFERENCES patients (id)
                 )
             ''')
@@ -352,15 +353,20 @@ class MedicalDataManager:
             if hasattr(self.parent_card, 'covid_severity_var'):
                 covid_severity = self.parent_card.covid_severity_var.get()
             
+            # Получаем значение АД
+            ad_value = ""
+            if hasattr(self.parent_card, 'ad_entry'):
+                ad_value = self.parent_card.ad_entry.get()
+            
             # Сохраняем в БД
             cursor.execute("""
                 INSERT INTO anamnesis_extended (
                     patient_id, weakness, fatigue, weight_loss, pallor, temperature,
                     runny_nose, sweating, cough, sputum, purulent_sputum,
                     bloody_sputum, mucous_sputum, covid19, covid_severity, hemoptysis, vomiting, headache,
-                    constipation, diarrhea, chest_pain, blood_in_stool, dyspnea
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """, tuple([self.parent_app.current_patient_id] + anamnesis_values + [covid_severity]))
+                    constipation, diarrhea, chest_pain, blood_in_stool, dyspnea, ad_value
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, tuple([self.parent_app.current_patient_id] + anamnesis_values + [covid_severity, ad_value]))
             
             conn.commit()
             conn.close()
@@ -442,37 +448,48 @@ class MedicalDataManager:
     def load_anamnesis_data(self):
         """Загрузка данных анамнеза"""
         if not self.parent_app.current_patient_id:
-            messagebox.showwarning("Предупреждение", "Сначала выберите пациента!")
+            messagebox.showwarning("Предупреждение", "Сначала загрузите данные пациента!")
             return
         
         try:
             conn = sqlite3.connect('medical_system.db')
             cursor = conn.cursor()
             
+            # Ищем данные в расширенной таблице
             cursor.execute("SELECT * FROM anamnesis_extended WHERE patient_id=?", (self.parent_app.current_patient_id,))
-            anamnesis_data = cursor.fetchone()
+            data = cursor.fetchone()
             
-            if anamnesis_data:
-                anamnesis_fields = ['weakness', 'fatigue', 'weight_loss', 'pallor', 'temperature', 
-                                   'runny_nose', 'sweating', 'cough', 'sputum', 'purulent_sputum',
-                                   'bloody_sputum', 'mucous_sputum', 'covid19', 'hemoptysis', 'vomiting',
-                                   'headache', 'constipation', 'diarrhea', 'chest_pain',
-                                   'blood_in_stool', 'dyspnea']
+            if data:
+                # Соответствие колонок полям интерфейса
+                field_mapping = {
+                    2: 'weakness', 3: 'fatigue', 4: 'weight_loss', 5: 'pallor',
+                    6: 'temperature', 7: 'runny_nose', 8: 'sweating', 9: 'cough',
+                    10: 'sputum', 11: 'purulent_sputum', 12: 'bloody_sputum',
+                    13: 'mucous_sputum', 14: 'covid19', 16: 'hemoptysis',
+                    17: 'vomiting', 18: 'headache', 19: 'constipation',
+                    20: 'diarrhea', 21: 'chest_pain', 22: 'blood_in_stool',
+                    23: 'dyspnea'
+                }
                 
+                # Загружаем чекбоксы
                 if hasattr(self.parent_card, 'anamnesis_vars'):
-                    for i, field_name in enumerate(anamnesis_fields):
+                    for col_index, field_name in field_mapping.items():
                         if field_name in self.parent_card.anamnesis_vars:
-                            self.parent_card.anamnesis_vars[field_name].set(bool(anamnesis_data[i+2]))
+                            self.parent_card.anamnesis_vars[field_name].set(bool(data[col_index]))
                 
-                # Загружаем тяжесть COVID-19 (поле 15 - covid_severity)
-                if hasattr(self.parent_card, 'covid_severity_var') and len(anamnesis_data) > 15:
-                    covid_severity = anamnesis_data[15] if anamnesis_data[15] else ""
-                    self.parent_card.covid_severity_var.set(covid_severity)
+                # Загружаем тяжесть COVID-19
+                if hasattr(self.parent_card, 'covid_severity_var') and len(data) > 15:
+                    self.parent_card.covid_severity_var.set(data[15] or "")
+                
+                # Загружаем значение АД
+                if hasattr(self.parent_card, 'ad_entry') and len(data) > 24:
+                    self.parent_card.ad_entry.delete(0, tk.END)
+                    self.parent_card.ad_entry.insert(0, data[24] or "")
                 
                 messagebox.showinfo("Успех", "Данные анамнеза загружены!")
             else:
-                messagebox.showinfo("Информация", "Анамнез для данного пациента не найден")
-            
+                messagebox.showinfo("Информация", "Данные анамнеза не найдены")
+                
             conn.close()
             
         except Exception as e:

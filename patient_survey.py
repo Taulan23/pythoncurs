@@ -447,7 +447,7 @@ class PatientSurvey:
         close_button = tk.Button(recommendations_window, text="Закрыть", 
                                font=('Arial', 16),
                                command=recommendations_window.destroy)
-        close_button.pack(pady=10)
+        close_button.pack(pady=10) 
     
     def get_questions_data(self, survey_type):
         """Получение данных о вопросах для конкретного типа опроса"""

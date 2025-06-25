@@ -104,7 +104,6 @@ class PatientCard:
         disability_combo = ttk.Combobox(left_frame, values=["", "первая (А)", "вторая (А)", "третья"], width=25)
         disability_combo.grid(row=row, column=1, sticky='w', padx=(10, 0), pady=2)
         self.patient_fields["disability_group"] = disability_combo
-        row += 1
         
         # Группа крови
         tk.Label(left_frame, text="Группа крови:", font=('Arial', 14)).grid(
@@ -188,7 +187,14 @@ class PatientCard:
             ("Гнойная мокрота", "purulent_sputum"),
             ("Кровяная мокрота", "bloody_sputum"),
             ("Слизистая мокрота", "mucous_sputum"),
-            ("Перенесенный COVID-19", "covid19")
+            ("Перенесенный COVID-19", "covid19"),
+            ("Диарея", "diarrhea"),
+            ("Боли в груди", "chest_pain"),
+            ("Кровь в каловых массах", "blood_in_stool"),
+            ("Одышка", "dyspnea"),
+            ("Потеря обоняния и вкуса", "loss_smell_taste"),
+            ("Миалгия", "myalgia"),
+            ("Сердцебиение", "palpitations")
         ]
         
         # Правая колонка симптомов  
@@ -196,16 +202,7 @@ class PatientCard:
             ("Кровохаркание", "hemoptysis"),
             ("Рвота", "vomiting"),
             ("Головные боли", "headache"),
-            ("Запор", "constipation"),
-            ("Диарея", "diarrhea"),
-            ("Боли в груди", "chest_pain"),
-            ("Кровь в каловых массах", "blood_in_stool"),
-            ("Одышка", "dyspnea"),
-            ("Потеря обоняния и вкуса", "loss_smell_taste"),
-            ("Миалгия", "myalgia"),
-            ("Сердцебиение", "palpitations"),
-            ("АД в норме(мм.рт.ст.)", "normal_bp"),
-            ("АД повышенное(мм.рт.ст.)", "high_bp")
+            ("Запор", "constipation")
         ]
         
         # Добавление чекбоксов в левую колонку
@@ -223,6 +220,15 @@ class PatientCard:
             cb = tk.Checkbutton(right_symptoms, text=symptom_text, variable=var,
                                font=('Arial', 14))
             cb.pack(anchor='w', pady=2)
+        
+        # Поле АД
+        ad_frame = tk.Frame(right_symptoms)
+        ad_frame.pack(anchor='w', pady=5, fill='x')
+        
+        tk.Label(ad_frame, text="АД:", font=('Arial', 14, 'bold')).pack(side='left')
+        self.ad_entry = tk.Entry(ad_frame, font=('Arial', 14), width=20)
+        self.ad_entry.pack(side='left', padx=5)
+        tk.Label(ad_frame, text="мм.рт.ст.", font=('Arial', 12)).pack(side='left')
         
         # Дополнительные поля внизу
         bottom_frame = tk.Frame(anamnesis_frame)
@@ -874,13 +880,23 @@ class PatientCard:
     
     def clear_anamnesis_data(self):
         """Очистка данных анамнеза"""
+        # Очищаем чекбоксы
         if hasattr(self, 'anamnesis_vars'):
             for var in self.anamnesis_vars.values():
                 var.set(False)
         
+        # Очищаем COVID-19 тяжесть
+        if hasattr(self, 'covid_severity_var'):
+            self.covid_severity_var.set("")
+        
+        # Очищаем SpO2
         if hasattr(self, 'spo2_vars'):
             for var in self.spo2_vars.values():
                 var.set(False)
+        
+        # Очищаем поле АД
+        if hasattr(self, 'ad_entry'):
+            self.ad_entry.delete(0, tk.END)
         
         messagebox.showinfo("Информация", "Данные анамнеза очищены")
     
@@ -984,18 +1000,6 @@ class PatientCard:
         except Exception as e:
             messagebox.showerror("Ошибка", f"Ошибка при загрузке анализа крови: {str(e)}")
     
-    def clear_blood_test_data(self):
-        """Очистка данных анализа крови"""
-        # Очищаем поля ввода
-        for entry in self.blood_entries.values():
-            entry.delete(0, tk.END)
-        
-        # Очищаем чекбоксы
-        for var in self.blood_test_vars.values():
-            var.set(False)
-        
-        messagebox.showinfo("Информация", "Данные анализа крови очищены")
-    
     def save_urine_test_data(self):
         """Сохранение данных анализа мочи"""
         if not self.parent_app.current_patient_id:
@@ -1011,7 +1015,7 @@ class PatientCard:
             
             # Получаем данные из чекбоксов
             checkbox_data = {}
-            for var_name, var in self.urine_test_vars.items():
+            for var_name, var in self.urine_combos.items():
                 checkbox_data[var_name] = 1 if var.get() else 0
             
             # Получаем данные из полей ввода
