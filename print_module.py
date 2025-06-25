@@ -218,7 +218,7 @@ class PrintModule:
                         symptoms.append(f"Тяжесть COVID-19: {covid_severity}")
             else:
                 # Обработка старой таблицы
-            if anamnesis[2]: symptoms.append("COVID-19")
+             if anamnesis[2]: symptoms.append("COVID-19")
             if anamnesis[3]: symptoms.append("Тяжесть заболевания")
             if anamnesis[4]: symptoms.append("Утомляемость")
             if anamnesis[5]: symptoms.append("Нарушения глюкозы")

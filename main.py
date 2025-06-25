@@ -298,28 +298,29 @@ class MedicalSystemApp:
         """Окно 'О программе'"""
         about_window = tk.Toplevel(self.root)
         about_window.title("О программе")
-        about_window.geometry("500x400")
-        about_window.resizable(False, False)
+        about_window.state('zoomed')  # Развернуть на весь экран в Windows
+        about_window.resizable(True, True)
         
-        text = """Данная программа предназначена для анализа и алгоритмизации лечебно-профилактических мероприятий у коморбидных пациентов после перенесенной Covid-инфекции.
+        text = """Данная программа предназначена для анализа
+и алгоритмизации лечебно-профилактических
+мероприятий у коморбидных пациентов
+после перенесенной Covid-инфекции.
 
 Разработчик: ст. мБС-231
-
 Версия: 2.0
-
 Год разработки: 2025
 
 Новое в версии 2.0:
 • Полная функциональность печати и экспорта
-• Предварительный просмотр документов
+• Предварительный просмотр документов  
 • Сохранение в файл
 • Улучшенные отчеты"""
         
         label = tk.Label(about_window, text=text, justify='left', 
-                        font=('Arial', 14), padx=20, pady=20)
+                        font=('Arial', 20), padx=50, pady=50)
         label.pack(expand=True)
         
-        btn_ok = tk.Button(about_window, text="OK", font=('Arial', 16), command=about_window.destroy)
+        btn_ok = tk.Button(about_window, text="OK", font=('Arial', 20), width=20, height=2, command=about_window.destroy)
         btn_ok.pack(pady=10)
     
     def show_user_manual(self):
