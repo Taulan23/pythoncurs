@@ -427,8 +427,10 @@ class PatientCard:
             entry.pack(side='left', padx=10)
             self.blood_entries[var_name] = entry
         
-        # Чекбоксы для отклонений
-        checkboxes = [
+        # Дополнительные показатели с полями ввода
+        tk.Label(right_frame, text="Дополнительные показатели:", font=('Arial', 14, 'bold')).pack(anchor='w', pady=(10, 5))
+        
+        additional_params = [
             ("СРБ в норме(мг/л)", "srb_normal"),
             ("СРБ повышен(мг/л)", "srb_elevated"),
             ("D-димер в норме (нг/мл)", "d_dimer_normal"),
@@ -437,14 +439,20 @@ class PatientCard:
             ("Пониженные тромбоциты (*10^9/л)", "thrombocytes_low")
         ]
         
-        tk.Label(right_frame, text="Дополнительные показатели:", font=('Arial', 14, 'bold')).pack(anchor='w', pady=(10, 5))
-        
-        for cb_text, var_name in checkboxes:
+        for param_text, var_name in additional_params:
+            param_frame = tk.Frame(right_frame)
+            param_frame.pack(fill='x', pady=3)
+            
             var = tk.BooleanVar()
             self.blood_test_vars[var_name] = var
-            cb = tk.Checkbutton(right_frame, text=cb_text, variable=var,
-                               font=('Arial', 14))
-            cb.pack(anchor='w', pady=2)
+            cb = tk.Checkbutton(param_frame, text=param_text, variable=var,
+                               font=('Arial', 14), width=30, anchor='w')
+            cb.pack(side='left')
+            
+            # Поле ввода для значения рядом с чекбоксом
+            entry = tk.Entry(param_frame, font=('Arial', 14), width=12)
+            entry.pack(side='left', padx=10)
+            self.blood_entries[var_name + "_value"] = entry
         
         # Кнопки управления
         buttons_frame = tk.Frame(right_frame)

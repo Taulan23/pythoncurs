@@ -37,13 +37,59 @@ class MedicalDataManager:
                 for var_name, var in self.parent_card.blood_test_vars.items():
                     checkbox_data[var_name] = 1 if var.get() else 0
             
+            # Получаем значения из дополнительных полей ввода
+            additional_values = {}
+            additional_fields = ['srb_normal_value', 'srb_elevated_value', 'd_dimer_normal_value',
+                               'd_dimer_elevated_value', 'thrombocytes_normal_value', 'thrombocytes_low_value']
+            
+            for field_name in additional_fields:
+                if hasattr(self.parent_card, 'blood_entries') and field_name in self.parent_card.blood_entries:
+                    try:
+                        value = self.parent_card.blood_entries[field_name].get().strip()
+                        additional_values[field_name] = float(value) if value else None
+                    except ValueError:
+                        additional_values[field_name] = None
+                else:
+                    additional_values[field_name] = None
+
+            # Обновляем структуру таблицы если нужно
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS blood_tests_extended (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    patient_id INTEGER,
+                    erythrocytes REAL,
+                    leukocytes REAL,
+                    hemoglobin REAL,
+                    soe REAL,
+                    lymphocytes REAL,
+                    srb_normal INTEGER DEFAULT 0,
+                    srb_elevated INTEGER DEFAULT 0,
+                    d_dimer_normal INTEGER DEFAULT 0,
+                    d_dimer_elevated INTEGER DEFAULT 0,
+                    thrombocytes_normal INTEGER DEFAULT 0,
+                    thrombocytes_low INTEGER DEFAULT 0,
+                    srb_normal_value REAL,
+                    srb_elevated_value REAL,
+                    d_dimer_normal_value REAL,
+                    d_dimer_elevated_value REAL,
+                    thrombocytes_normal_value REAL,
+                    thrombocytes_low_value REAL,
+                    FOREIGN KEY (patient_id) REFERENCES patients (id)
+                )
+            """)
+            
+            # Удаляем старые данные
+            cursor.execute("DELETE FROM blood_tests_extended WHERE patient_id=?", (self.parent_app.current_patient_id,))
+
             # Сохраняем в БД
             cursor.execute("""
-                INSERT INTO blood_tests (
+                INSERT INTO blood_tests_extended (
                     patient_id, erythrocytes, leukocytes, hemoglobin, soe, lymphocytes,
                     srb_normal, srb_elevated, d_dimer_normal, d_dimer_elevated,
-                    thrombocytes_normal, thrombocytes_low
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    thrombocytes_normal, thrombocytes_low,
+                    srb_normal_value, srb_elevated_value, d_dimer_normal_value,
+                    d_dimer_elevated_value, thrombocytes_normal_value, thrombocytes_low_value
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
                 self.parent_app.current_patient_id,
                 blood_data.get('erythrocytes'),
@@ -56,7 +102,13 @@ class MedicalDataManager:
                 checkbox_data.get('d_dimer_normal', 0),
                 checkbox_data.get('d_dimer_elevated', 0),
                 checkbox_data.get('thrombocytes_normal', 0),
-                checkbox_data.get('thrombocytes_low', 0)
+                checkbox_data.get('thrombocytes_low', 0),
+                additional_values.get('srb_normal_value'),
+                additional_values.get('srb_elevated_value'),
+                additional_values.get('d_dimer_normal_value'),
+                additional_values.get('d_dimer_elevated_value'),
+                additional_values.get('thrombocytes_normal_value'),
+                additional_values.get('thrombocytes_low_value')
             ))
             
             conn.commit()
@@ -539,26 +591,37 @@ class MedicalDataManager:
             conn = sqlite3.connect('medical_system.db')
             cursor = conn.cursor()
             
-            cursor.execute("SELECT * FROM blood_tests WHERE patient_id=?", (self.parent_app.current_patient_id,))
+            # Пробуем загрузить из расширенной таблицы
+            cursor.execute("SELECT * FROM blood_tests_extended WHERE patient_id=?", (self.parent_app.current_patient_id,))
             blood_data = cursor.fetchone()
             
             if blood_data:
-                # Загружаем числовые поля
-                blood_fields = ['erythrocytes', 'leukocytes', 'hemoglobin', 'esr', 'lymphocytes']
-                if hasattr(self.parent_card, 'blood_fields'):
-                    for i, field_name in enumerate(blood_fields):
-                        if field_name in self.parent_card.blood_fields:
+                # Загружаем основные числовые поля
+                basic_fields = ['erythrocytes', 'leukocytes', 'hemoglobin', 'soe', 'lymphocytes']
+                if hasattr(self.parent_card, 'blood_entries'):
+                    for i, field_name in enumerate(basic_fields):
+                        if field_name in self.parent_card.blood_entries:
                             value = blood_data[i+2] if blood_data[i+2] is not None else ""
-                            self.parent_card.blood_fields[field_name].delete(0, tk.END)
-                            self.parent_card.blood_fields[field_name].insert(0, str(value))
+                            self.parent_card.blood_entries[field_name].delete(0, tk.END)
+                            self.parent_card.blood_entries[field_name].insert(0, str(value))
                 
                 # Загружаем чекбоксы
-                blood_checkboxes = ['crb_normal', 'crb_elevated', 'd_dimer_normal', 'd_dimer_elevated', 
-                                   'platelets_normal', 'platelets_low']
-                if hasattr(self.parent_card, 'blood_vars'):
+                blood_checkboxes = ['srb_normal', 'srb_elevated', 'd_dimer_normal', 'd_dimer_elevated', 
+                                   'thrombocytes_normal', 'thrombocytes_low']
+                if hasattr(self.parent_card, 'blood_test_vars'):
                     for i, field_name in enumerate(blood_checkboxes):
-                        if field_name in self.parent_card.blood_vars:
-                            self.parent_card.blood_vars[field_name].set(bool(blood_data[i+7]))
+                        if field_name in self.parent_card.blood_test_vars:
+                            self.parent_card.blood_test_vars[field_name].set(bool(blood_data[i+7]))
+                
+                # Загружаем дополнительные поля со значениями
+                additional_value_fields = ['srb_normal_value', 'srb_elevated_value', 'd_dimer_normal_value',
+                                         'd_dimer_elevated_value', 'thrombocytes_normal_value', 'thrombocytes_low_value']
+                if hasattr(self.parent_card, 'blood_entries'):
+                    for i, field_name in enumerate(additional_value_fields):
+                        if field_name in self.parent_card.blood_entries:
+                            value = blood_data[i+13] if len(blood_data) > i+13 and blood_data[i+13] is not None else ""
+                            self.parent_card.blood_entries[field_name].delete(0, tk.END)
+                            self.parent_card.blood_entries[field_name].insert(0, str(value))
                 
                 messagebox.showinfo("Успех", "Данные анализов крови загружены!")
             else:

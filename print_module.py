@@ -77,9 +77,14 @@ class PrintModule:
             cursor.execute("SELECT * FROM comorbidities WHERE patient_id=?", (self.parent_app.current_patient_id,))
             comorbidities_data = cursor.fetchone()
             
-            # Анализы крови
-            cursor.execute("SELECT * FROM blood_tests WHERE patient_id=?", (self.parent_app.current_patient_id,))
+            # Анализы крови (пробуем загрузить из расширенной таблицы)
+            cursor.execute("SELECT * FROM blood_tests_extended WHERE patient_id=?", (self.parent_app.current_patient_id,))
             blood_data = cursor.fetchone()
+            
+            # Если нет в расширенной таблице, проверяем старую
+            if not blood_data:
+                cursor.execute("SELECT * FROM blood_tests WHERE patient_id=?", (self.parent_app.current_patient_id,))
+                blood_data = cursor.fetchone()
             
             # Анализы мочи
             cursor.execute("SELECT * FROM urine_tests WHERE patient_id=?", (self.parent_app.current_patient_id,))
@@ -382,18 +387,42 @@ class PrintModule:
         
         if data['blood']:
             blood = data['blood']
+            
+            # Основные показатели
+            report += "Основные показатели:\n"
             report += f"  • Эритроциты: {blood[2] or 'Не указано'} (*10^12/л)\n"
             report += f"  • Лейкоциты: {blood[3] or 'Не указано'} (*10^9/л)\n"
             report += f"  • Гемоглобин: {blood[4] or 'Не указано'} (г/л)\n"
             report += f"  • СОЭ: {blood[5] or 'Не указано'} (мм/ч)\n"
             report += f"  • Лимфоциты: {blood[6] or 'Не указано'} (%)\n"
             
-            if blood[7]: report += "  • СРБ в норме\n"
-            if blood[8]: report += "  • СРБ повышен\n"
-            if blood[9]: report += "  • D-димер в норме\n"
-            if blood[10]: report += "  • D-димер повышен\n"
-            if blood[11]: report += "  • Тромбоциты в норме\n"
-            if blood[12]: report += "  • Тромбоциты понижены\n"
+            # Дополнительные показатели с чекбоксами и значениями
+            report += "\nДополнительные показатели:\n"
+            
+            # СРБ
+            if blood[7]:  # srb_normal
+                srb_value = blood[13] if len(blood) > 13 and blood[13] else "не указано"
+                report += f"  • СРБ в норме: {srb_value} (мг/л)\n"
+            if blood[8]:  # srb_elevated
+                srb_value = blood[14] if len(blood) > 14 and blood[14] else "не указано"
+                report += f"  • СРБ повышен: {srb_value} (мг/л)\n"
+            
+            # D-димер
+            if blood[9]:  # d_dimer_normal
+                d_dimer_value = blood[15] if len(blood) > 15 and blood[15] else "не указано"
+                report += f"  • D-димер в норме: {d_dimer_value} (нг/мл)\n"
+            if blood[10]:  # d_dimer_elevated
+                d_dimer_value = blood[16] if len(blood) > 16 and blood[16] else "не указано"
+                report += f"  • D-димер повышен: {d_dimer_value} (нг/мл)\n"
+            
+            # Тромбоциты
+            if blood[11]:  # thrombocytes_normal
+                thrombocytes_value = blood[17] if len(blood) > 17 and blood[17] else "не указано"
+                report += f"  • Тромбоциты в норме: {thrombocytes_value} (*10^9/л)\n"
+            if blood[12]:  # thrombocytes_low
+                thrombocytes_value = blood[18] if len(blood) > 18 and blood[18] else "не указано"
+                report += f"  • Тромбоциты понижены: {thrombocytes_value} (*10^9/л)\n"
+                
         else:
             report += "Данные анализов крови не заполнены.\n"
         
@@ -597,18 +626,41 @@ class PrintModule:
             report += "\nАНАЛИЗЫ КРОВИ:\n"
             report += "─────────────────────────────────────────────────────────────────────────────\n"
             blood = data['blood']
+            
+            # Основные показатели
+            report += "Основные показатели:\n"
             report += f"  • Эритроциты: {blood[2] or 'Не указано'} (*10^12/л)\n"
             report += f"  • Лейкоциты: {blood[3] or 'Не указано'} (*10^9/л)\n"
             report += f"  • Гемоглобин: {blood[4] or 'Не указано'} (г/л)\n"
             report += f"  • СОЭ: {blood[5] or 'Не указано'} (мм/ч)\n"
             report += f"  • Лимфоциты: {blood[6] or 'Не указано'} (%)\n"
             
-            if blood[7]: report += "  • СРБ в норме\n"
-            if blood[8]: report += "  • СРБ повышен\n"
-            if blood[9]: report += "  • D-димер в норме\n"
-            if blood[10]: report += "  • D-димер повышен\n"
-            if blood[11]: report += "  • Тромбоциты в норме\n"
-            if blood[12]: report += "  • Тромбоциты понижены\n"
+            # Дополнительные показатели с значениями
+            report += "\nДополнительные показатели:\n"
+            
+            # СРБ
+            if blood[7]:  # srb_normal
+                srb_value = blood[13] if len(blood) > 13 and blood[13] else "не указано"
+                report += f"  • СРБ в норме: {srb_value} (мг/л)\n"
+            if blood[8]:  # srb_elevated
+                srb_value = blood[14] if len(blood) > 14 and blood[14] else "не указано"
+                report += f"  • СРБ повышен: {srb_value} (мг/л)\n"
+            
+            # D-димер
+            if blood[9]:  # d_dimer_normal
+                d_dimer_value = blood[15] if len(blood) > 15 and blood[15] else "не указано"
+                report += f"  • D-димер в норме: {d_dimer_value} (нг/мл)\n"
+            if blood[10]:  # d_dimer_elevated
+                d_dimer_value = blood[16] if len(blood) > 16 and blood[16] else "не указано"
+                report += f"  • D-димер повышен: {d_dimer_value} (нг/мл)\n"
+            
+            # Тромбоциты
+            if blood[11]:  # thrombocytes_normal
+                thrombocytes_value = blood[17] if len(blood) > 17 and blood[17] else "не указано"
+                report += f"  • Тромбоциты в норме: {thrombocytes_value} (*10^9/л)\n"
+            if blood[12]:  # thrombocytes_low
+                thrombocytes_value = blood[18] if len(blood) > 18 and blood[18] else "не указано"
+                report += f"  • Тромбоциты понижены: {thrombocytes_value} (*10^9/л)\n"
         
         # Анализы мочи
         if data['urine']:
