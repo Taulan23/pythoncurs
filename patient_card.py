@@ -82,34 +82,35 @@ class PatientCard:
         
         row = 0
         for label_text, field_name in fields:
-            tk.Label(left_frame, text=label_text, font=('Arial', 14)).grid(
+            tk.Label(left_frame, text=label_text, font=('Arial', 14), width=18, anchor='w').grid(
                 row=row, column=0, sticky='w', pady=2)
             
-            entry = tk.Entry(left_frame, font=('Arial', 14), width=28)
-            entry.grid(row=row, column=1, sticky='w', padx=(10, 0), pady=2)
+            entry = tk.Entry(left_frame, font=('Arial', 14), width=35)
+            entry.grid(row=row, column=1, sticky='w', padx=(5, 0), pady=2)
             self.patient_fields[field_name] = entry
             row += 1
         
         # Пол
-        tk.Label(left_frame, text="Пол:", font=('Arial', 14)).grid(
+        tk.Label(left_frame, text="Пол:", font=('Arial', 14), width=18, anchor='w').grid(
             row=row, column=0, sticky='w', pady=2)
-        gender_combo = ttk.Combobox(left_frame, values=["мужской", "женский"], width=25)
-        gender_combo.grid(row=row, column=1, sticky='w', padx=(10, 0), pady=2)
+        gender_combo = ttk.Combobox(left_frame, values=["мужской", "женский"], width=32, font=('Arial', 14))
+        gender_combo.grid(row=row, column=1, sticky='w', padx=(5, 0), pady=2)
         self.patient_fields["gender"] = gender_combo
         row += 1
         
         # Группа инвалидности
-        tk.Label(left_frame, text="Группа инвалидности:", font=('Arial', 14)).grid(
+        tk.Label(left_frame, text="Группа инвалидности:", font=('Arial', 14), width=18, anchor='w').grid(
             row=row, column=0, sticky='w', pady=2)
-        disability_combo = ttk.Combobox(left_frame, values=["", "первая (А)", "вторая (А)", "третья"], width=25)
-        disability_combo.grid(row=row, column=1, sticky='w', padx=(10, 0), pady=2)
+        disability_combo = ttk.Combobox(left_frame, values=["", "первая (А)", "вторая (А)", "третья"], width=32, font=('Arial', 14))
+        disability_combo.grid(row=row, column=1, sticky='w', padx=(5, 0), pady=2)
         self.patient_fields["disability_group"] = disability_combo
+        row += 1
         
         # Группа крови
-        tk.Label(left_frame, text="Группа крови:", font=('Arial', 14)).grid(
+        tk.Label(left_frame, text="Группа крови:", font=('Arial', 14), width=18, anchor='w').grid(
             row=row, column=0, sticky='w', pady=2)
-        blood_combo = ttk.Combobox(left_frame, values=["первая (А)", "вторая (А)", "третья", "четвертая"], width=25)
-        blood_combo.grid(row=row, column=1, sticky='w', padx=(10, 0), pady=2)
+        blood_combo = ttk.Combobox(left_frame, values=["первая (А)", "вторая (А)", "третья", "четвертая"], width=32, font=('Arial', 14))
+        blood_combo.grid(row=row, column=1, sticky='w', padx=(5, 0), pady=2)
         self.patient_fields["blood_group"] = blood_combo
         
         # Кнопки управления данными
@@ -643,15 +644,15 @@ class PatientCard:
         self.echo_fields = {}
         
         echo_params = [
-            ("Конечно-диастолический размер ЛЖ (мм)", "lv_edd"),
-            ("Конечно-систолический размер ЛЖ (мм)", "lv_esd"),
-            ("Толщина задней стенки ЛЖ (мм)", "lv_pw_thickness"),
-            ("Толщина межжелудочковой перегородки (мм)", "ivs_thickness"),
-            ("Фракция выброса ЛЖ (%)", "lv_ef"),
-            ("Диаметр левого предсердия (мм)", "la_diameter"),
-            ("Диаметр правого желудочка (мм)", "rv_diameter"),
-            ("Диаметр аорты (мм)", "aorta_diameter"),
-            ("ЛА систолическое давление (мм рт.ст.)", "pa_systolic_pressure")
+            ("КДР ЛЖ (мм)", "lv_edd"),
+            ("КСР ЛЖ (мм)", "lv_esd"),
+            ("ТЗСЛЖ (мм)", "lv_pw_thickness"),
+            ("ТМЖП (мм)", "ivs_thickness"),
+            ("ФВ ЛЖ (%)", "lv_ef"),
+            ("Левое предсердие (мм)", "la_diameter"),
+            ("Правый желудочек (мм)", "rv_diameter"),
+            ("Аорта (мм)", "aorta_diameter"),
+            ("СТЛА (мм рт.ст.)", "pa_systolic_pressure")
         ]
         
         # Создание полей в виде таблицы - поля рядом с названиями
@@ -660,10 +661,10 @@ class PatientCard:
             row_frame.pack(fill='x', pady=5)
             
             # Название параметра
-            tk.Label(row_frame, text=param_text, font=('Arial', 14), width=35, anchor='w').pack(side='left')
+            tk.Label(row_frame, text=param_text, font=('Arial', 14), width=25, anchor='w').pack(side='left')
             
             # Поле ввода сразу рядом с названием
-            entry = tk.Entry(row_frame, font=('Arial', 14), width=12)
+            entry = tk.Entry(row_frame, font=('Arial', 14), width=15)
             entry.pack(side='left', padx=10)
             self.echo_fields[field_name] = entry
         

@@ -487,9 +487,8 @@ class PrintModule:
             report += f"  • КСР ЛЖ: {format_value(echo[5])} мм\n"
             report += f"  • ТМЖП: {format_value(echo[6])} мм\n"
             report += f"  • ТЗСЛЖ: {format_value(echo[7])} мм\n"
-            report += f"  • ФВ: {format_value(echo[8])} %\n"
-            report += f"  • Правое предсердие: {format_value(echo[9])} мм\n"
-            report += f"  • ПЖ: {format_value(echo[10])} мм\n"
+            report += f"  • ФВ ЛЖ: {format_value(echo[8])} %\n"
+            report += f"  • Правый желудочек: {format_value(echo[9])} мм\n"
             report += f"  • СТЛА: {format_value(echo[11])} мм рт.ст.\n"
         else:
             report += "Данные ЭХО-КГ не заполнены.\n"
@@ -718,9 +717,8 @@ class PrintModule:
             report += f"  • КСР ЛЖ: {format_value(echo[5])} мм\n"
             report += f"  • ТМЖП: {format_value(echo[6])} мм\n"
             report += f"  • ТЗСЛЖ: {format_value(echo[7])} мм\n"
-            report += f"  • ФВ: {format_value(echo[8])} %\n"
-            report += f"  • Правое предсердие: {format_value(echo[9])} мм\n"
-            report += f"  • ПЖ: {format_value(echo[10])} мм\n"
+            report += f"  • ФВ ЛЖ: {format_value(echo[8])} %\n"
+            report += f"  • Правый желудочек: {format_value(echo[9])} мм\n"
             report += f"  • СТЛА: {format_value(echo[11])} мм рт.ст.\n"
         
         try:
