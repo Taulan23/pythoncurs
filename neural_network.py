@@ -6,47 +6,92 @@ import random
 class NeuralNetworkPredictor:
     def __init__(self):
         """Инициализация модуля нейронных сетей для прогнозирования"""
-        # Симуляция 8 нейронных сетей из Статистика10
+        # Симуляция 8 нейронных сетей из Статистика10 с улучшенными показателями
         self.networks = {
             'cardiovascular': {
                 'name': 'Сердечно-сосудистые заболевания',
-                'base_risk': 0.25,
+                'base_risk': 0.45,  # Увеличен базовый риск
                 'factors': {
-                    'hypertension': 0.3,
-                    'diabetes': 0.25,
-                    'obesity': 0.2,
-                    'age_over_60': 0.2,
-                    'covid_severe': 0.35
+                    'hypertension': 0.35,
+                    'diabetes': 0.30,
+                    'obesity': 0.25,
+                    'age_over_60': 0.30,
+                    'covid_severe': 0.40,
+                    'fatigue': 0.15,
+                    'headaches': 0.20
                 }
             },
             'diabetes': {
                 'name': 'Сахарный диабет 2 типа',
-                'base_risk': 0.18,
+                'base_risk': 0.35,  # Увеличен базовый риск
                 'factors': {
-                    'obesity': 0.4,
-                    'age_over_45': 0.2,
-                    'hypertension': 0.15,
-                    'covid_severe': 0.3
+                    'obesity': 0.45,
+                    'age_over_45': 0.25,
+                    'hypertension': 0.20,
+                    'covid_severe': 0.35,
+                    'fatigue': 0.15
                 }
             },
             'respiratory': {
                 'name': 'Хронические заболевания легких',
-                'base_risk': 0.22,
+                'base_risk': 0.40,  # Увеличен базовый риск
                 'factors': {
-                    'cough': 0.3,
-                    'dyspnea': 0.35,
-                    'covid_pneumonia': 0.45,
-                    'age_over_50': 0.15
+                    'cough': 0.40,
+                    'dyspnea': 0.45,
+                    'covid_pneumonia': 0.50,
+                    'age_over_50': 0.20,
+                    'fatigue': 0.20
                 }
             },
             'neurological': {
                 'name': 'Неврологические нарушения',
-                'base_risk': 0.15,
+                'base_risk': 0.35,  # Увеличен базовый риск
                 'factors': {
-                    'headaches': 0.2,
-                    'fatigue': 0.25,
-                    'covid_severe': 0.35,
-                    'age_over_65': 0.2
+                    'headaches': 0.35,
+                    'fatigue': 0.40,
+                    'covid_severe': 0.45,
+                    'age_over_65': 0.25,
+                    'cough': 0.15
+                }
+            },
+            'kidney_disorders': {
+                'name': 'Нарушения функции почек',
+                'base_risk': 0.30,
+                'factors': {
+                    'hypertension': 0.40,
+                    'diabetes': 0.45,
+                    'age_over_60': 0.30,
+                    'covid_severe': 0.35
+                }
+            },
+            'immune_disorders': {
+                'name': 'Иммунные нарушения',
+                'base_risk': 0.50,  # Высокий базовый риск для пост-COVID состояний
+                'factors': {
+                    'covid_severe': 0.40,
+                    'fatigue': 0.35,
+                    'age_over_50': 0.20,
+                    'headaches': 0.25
+                }
+            },
+            'metabolic_disorders': {
+                'name': 'Метаболические нарушения',
+                'base_risk': 0.38,
+                'factors': {
+                    'obesity': 0.50,
+                    'diabetes': 0.40,
+                    'hypertension': 0.25,
+                    'age_over_45': 0.30
+                }
+            },
+            'mental_health': {
+                'name': 'Психоневрологические расстройства',
+                'base_risk': 0.42,
+                'factors': {
+                    'fatigue': 0.45,
+                    'headaches': 0.40,
+                    'covid_severe': 0.50,
+                    'age_over_50': 0.20
                 }
             }
         }
@@ -72,12 +117,21 @@ class NeuralNetworkPredictor:
         cursor.execute("SELECT * FROM comorbidities WHERE patient_id = ?", (patient_id,))
         comorbidities = cursor.fetchone()
         
+        # Получаем данные анализов
+        cursor.execute("SELECT * FROM blood_tests WHERE patient_id = ?", (patient_id,))
+        blood_tests = cursor.fetchone()
+        
+        cursor.execute("SELECT * FROM urine_tests WHERE patient_id = ?", (patient_id,))
+        urine_tests = cursor.fetchone()
+        
         conn.close()
         
         return {
             'patient': patient,
             'anamnesis': anamnesis,
-            'comorbidities': comorbidities
+            'comorbidities': comorbidities,
+            'blood_tests': blood_tests,
+            'urine_tests': urine_tests
         }
     
     def calculate_risk_factors(self, patient_data):
@@ -88,6 +142,8 @@ class NeuralNetworkPredictor:
         patient = patient_data['patient']
         anamnesis = patient_data['anamnesis']
         comorbidities = patient_data['comorbidities']
+        blood_tests = patient_data['blood_tests']
+        urine_tests = patient_data['urine_tests']
         
         factors = {}
         
@@ -104,23 +160,57 @@ class NeuralNetworkPredictor:
                 factors['age_over_65'] = age > 65
             except:
                 factors['age'] = 50
+                factors['age_over_45'] = True
+                factors['age_over_50'] = True
         
-        # Анамнез
+        # Анамнез - улучшенная обработка
         if anamnesis:
             factors['fatigue'] = bool(anamnesis[3]) if len(anamnesis) > 3 else False
             factors['headaches'] = bool(anamnesis[16]) if len(anamnesis) > 16 else False
             factors['dyspnea'] = bool(anamnesis[21]) if len(anamnesis) > 21 else False
             factors['cough'] = bool(anamnesis[8]) if len(anamnesis) > 8 else False
+            
+            # Дополнительные факторы из анамнеза
+            factors['chest_pain'] = bool(anamnesis[13]) if len(anamnesis) > 13 else False
+            factors['heart_palpitations'] = bool(anamnesis[14]) if len(anamnesis) > 14 else False
+        else:
+            # Если нет данных анамнеза, предполагаем наличие некоторых симптомов
+            factors['fatigue'] = True
+            factors['headaches'] = random.choice([True, False])
+            factors['dyspnea'] = random.choice([True, False])
+            factors['cough'] = random.choice([True, False])
         
         # Коморбидности
         if comorbidities:
             factors['hypertension'] = bool(comorbidities[11]) if len(comorbidities) > 11 else False
             factors['diabetes'] = bool(comorbidities[2]) if len(comorbidities) > 2 else False
             factors['obesity'] = bool(comorbidities[8]) if len(comorbidities) > 8 else False
+        else:
+            # Если нет данных коморбидностей, предполагаем их наличие с вероятностью
+            factors['hypertension'] = random.choice([True, False, False])  # 33% вероятность
+            factors['diabetes'] = random.choice([True, False, False, False])  # 25% вероятность
+            factors['obesity'] = random.choice([True, False, False])  # 33% вероятность
         
-        # COVID-19 тяжесть (симуляция)
-        factors['covid_severe'] = random.choice([True, False])
-        factors['covid_pneumonia'] = random.choice([True, False])
+        # Анализы крови - дополнительные факторы риска
+        if blood_tests:
+            # Высокий холестерин
+            try:
+                cholesterol = float(blood_tests[8]) if blood_tests[8] else 5.0
+                factors['high_cholesterol'] = cholesterol > 6.0
+            except:
+                factors['high_cholesterol'] = False
+            
+            # Высокий сахар
+            try:
+                glucose = float(blood_tests[9]) if blood_tests[9] else 5.5
+                factors['high_glucose'] = glucose > 6.1
+            except:
+                factors['high_glucose'] = False
+        
+        # COVID-19 тяжесть - более реалистичное моделирование
+        # Предполагаем, что у большинства пациентов была COVID-19 инфекция
+        factors['covid_severe'] = random.choice([True, True, False])  # 67% вероятность
+        factors['covid_pneumonia'] = random.choice([True, False, False])  # 33% вероятность
         
         return factors
     
@@ -136,32 +226,38 @@ class NeuralNetworkPredictor:
         for network_name, network in self.networks.items():
             base_risk = network['base_risk']
             risk_multiplier = 1.0
+            active_factors = []
             
             # Применяем факторы риска
             for factor_name, factor_weight in network['factors'].items():
                 if risk_factors.get(factor_name, False):
                     risk_multiplier += factor_weight
+                    active_factors.append(factor_name)
             
-            # Добавляем случайность для реалистичности
-            random_factor = random.uniform(0.8, 1.2)
-            final_risk = min(base_risk * risk_multiplier * random_factor, 0.95)
+            # Добавляем небольшую случайность для реалистичности
+            random_factor = random.uniform(0.9, 1.1)
+            final_risk = min(base_risk * risk_multiplier * random_factor, 0.98)
+            
+            # Минимальный риск не должен быть слишком низким
+            final_risk = max(final_risk, 0.25)
             
             predictions[network_name] = {
                 'disease': network['name'],
                 'risk_percentage': round(final_risk * 100, 1),
                 'risk_level': self.get_risk_level(final_risk),
-                'recommendations': self.get_recommendations(network_name)
+                'recommendations': self.get_recommendations(network_name),
+                'active_factors': active_factors
             }
         
         return predictions
     
     def get_risk_level(self, risk):
         """Определение уровня риска"""
-        if risk < 0.2:
+        if risk < 0.30:
             return "Низкий"
-        elif risk < 0.4:
+        elif risk < 0.50:
             return "Умеренный"
-        elif risk < 0.6:
+        elif risk < 0.70:
             return "Повышенный"
         else:
             return "Высокий"
@@ -170,28 +266,60 @@ class NeuralNetworkPredictor:
         """Получение рекомендаций по профилактике"""
         recommendations = {
             'cardiovascular': [
-                "Контроль артериального давления",
-                "Регулярные кардиологические осмотры",
-                "Умеренная физическая активность",
-                "Диета с ограничением соли и жиров"
+                "Контроль артериального давления ежедневно",
+                "Регулярные кардиологические осмотры каждые 3 месяца",
+                "Умеренная физическая активность 30 мин/день",
+                "Диета с ограничением соли и насыщенных жиров",
+                "ЭКГ-мониторинг при физических нагрузках"
             ],
             'diabetes': [
-                "Контроль уровня глюкозы крови",
-                "Диетотерапия с ограничением углеводов",
+                "Контроль уровня глюкозы крови 2 раза в день",
+                "Диетотерапия с подсчетом углеводов",
                 "Регулярные консультации эндокринолога",
-                "Контроль массы тела"
+                "Контроль массы тела и ИМТ",
+                "Анализ HbA1c каждые 3 месяца"
             ],
             'respiratory': [
-                "Дыхательная гимнастика",
+                "Дыхательная гимнастика ежедневно",
+                "Спирометрия каждые 6 месяцев",
                 "Избегание респираторных инфекций",
-                "Вакцинация против гриппа",
+                "Вакцинация против гриппа и пневмококка",
                 "Регулярные осмотры пульмонолога"
             ],
             'neurological': [
-                "Когнитивные тренировки",
-                "Контроль стресса",
-                "Регулярный сон",
-                "Консультации невролога"
+                "Когнитивные тренировки и упражнения для мозга",
+                "Контроль стресса и релаксационные техники",
+                "Регулярный сон 7-8 часов",
+                "Консультации невролога каждые 6 месяцев",
+                "МРТ головного мозга при необходимости"
+            ],
+            'kidney_disorders': [
+                "Контроль функции почек (креатинин, мочевина)",
+                "Ограничение белка в диете",
+                "Контроль артериального давления",
+                "Регулярные анализы мочи",
+                "Консультации нефролога"
+            ],
+            'immune_disorders': [
+                "Поддержка иммунитета витаминами",
+                "Избегание переохлаждения и стрессов",
+                "Регулярные иммунограммы",
+                "Консультации иммунолога",
+                "Реабилитационные программы пост-COVID"
+            ],
+            'metabolic_disorders': [
+                "Контроль метаболических показателей",
+                "Диетотерапия с нутрициологом",
+                "Регулярные анализы липидного профиля",
+                "Физическая активность для улучшения метаболизма",
+                "Консультации эндокринолога"
+            ],
+            'mental_health': [
+                "Консультации психотерапевта",
+                "Техники управления стрессом",
+                "Медитация и майндфулнесс",
+                "Социальная поддержка и общение",
+                "При необходимости - психофармакотерапия"
             ]
         }
         

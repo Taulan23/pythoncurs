@@ -410,15 +410,15 @@ class PatientCard:
             ("% Лимфоциты", "lymphocytes")
         ]
         
-        # Поля для ввода числовых значений
+        # Поля для ввода числовых значений - поля рядом с названиями
         self.blood_entries = {}
         for param_text, var_name in blood_params:
             param_frame = tk.Frame(right_frame)
-            param_frame.pack(fill='x', pady=2)
+            param_frame.pack(fill='x', pady=3)
             
-            tk.Label(param_frame, text=param_text, font=('Arial', 14), width=30, anchor='w').pack(side='left')
-            entry = tk.Entry(param_frame, font=('Arial', 14), width=15)
-            entry.pack(side='right', padx=10)
+            tk.Label(param_frame, text=param_text, font=('Arial', 14), width=25, anchor='w').pack(side='left')
+            entry = tk.Entry(param_frame, font=('Arial', 14), width=12)
+            entry.pack(side='left', padx=10)
             self.blood_entries[var_name] = entry
         
         # Чекбоксы для отклонений
@@ -476,32 +476,53 @@ class PatientCard:
         right_frame = tk.Frame(urine_frame)
         right_frame.pack(side='right', fill='both', expand=True, padx=10, pady=10)
         
-        self.urine_test_vars = {}
+        self.urine_combos = {}
         
-        # Параметры анализа мочи
-        urine_params = [
-            ("Анализ не проводился", "analysis_not_performed"),
-            ("Прозрачная моча", "transparent_urine"),
-            ("Мутная моча", "cloudy_urine"),
-            ("Светло-желтая моча", "light_yellow_urine"),
-            ("Темно-желтая моча", "dark_yellow_urine")
-        ]
+        # Заголовок
+        tk.Label(right_frame, text="Параметры анализа мочи", font=('Arial', 16, 'bold')).pack(pady=10)
         
-        for param_text, var_name in urine_params:
-            var = tk.BooleanVar()
-            self.urine_test_vars[var_name] = var
-            cb = tk.Checkbutton(right_frame, text=param_text, variable=var,
-                               font=('Arial', 14))
-            cb.pack(anchor='w', pady=3)
+        # Прозрачность мочи
+        transparency_frame = tk.Frame(right_frame)
+        transparency_frame.pack(fill='x', pady=8)
+        tk.Label(transparency_frame, text="Прозрачность:", font=('Arial', 14), width=18, anchor='w').pack(side='left')
+        self.transparency_combo = ttk.Combobox(transparency_frame, font=('Arial', 14), width=15)
+        self.transparency_combo['values'] = ('Не выбрано', 'Прозрачная', 'Мутная')
+        self.transparency_combo.set('Не выбрано')
+        self.transparency_combo.pack(side='left', padx=10)
+        self.urine_combos['transparency'] = self.transparency_combo
         
-        # Поля для ввода числовых значений
-        tk.Label(right_frame, text="(г/л) Наличие белка:", font=('Arial', 14)).pack(anchor='w', pady=(10, 2))
-        self.protein_entry = tk.Entry(right_frame, font=('Arial', 14), width=20)
-        self.protein_entry.pack(anchor='w', padx=20)
+        # Цвет мочи
+        color_frame = tk.Frame(right_frame)
+        color_frame.pack(fill='x', pady=8)
+        tk.Label(color_frame, text="Цвет:", font=('Arial', 14), width=18, anchor='w').pack(side='left')
+        self.color_combo = ttk.Combobox(color_frame, font=('Arial', 14), width=15)
+        self.color_combo['values'] = ('Не выбрано', 'Светло-желтый', 'Темно-желтый', 'Красноватый', 'Коричневый')
+        self.color_combo.set('Не выбрано')
+        self.color_combo.pack(side='left', padx=10)
+        self.urine_combos['color'] = self.color_combo
         
-        tk.Label(right_frame, text="(в п/зр) Лейкоциты:", font=('Arial', 14)).pack(anchor='w', pady=(10, 2))
-        self.leukocytes_urine_entry = tk.Entry(right_frame, font=('Arial', 14), width=20)
-        self.leukocytes_urine_entry.pack(anchor='w', padx=20)
+        # Статус анализа
+        status_frame = tk.Frame(right_frame)
+        status_frame.pack(fill='x', pady=8)
+        tk.Label(status_frame, text="Статус анализа:", font=('Arial', 14), width=18, anchor='w').pack(side='left')
+        self.status_combo = ttk.Combobox(status_frame, font=('Arial', 14), width=15)
+        self.status_combo['values'] = ('Проведен', 'Не проводился', 'Назначен')
+        self.status_combo.set('Проведен')
+        self.status_combo.pack(side='left', padx=10)
+        self.urine_combos['status'] = self.status_combo
+        
+        # Поля для ввода числовых значений - поля рядом с названиями
+        protein_frame = tk.Frame(right_frame)
+        protein_frame.pack(fill='x', pady=5)
+        tk.Label(protein_frame, text="(г/л) Наличие белка:", font=('Arial', 14), width=20, anchor='w').pack(side='left')
+        self.protein_entry = tk.Entry(protein_frame, font=('Arial', 14), width=12)
+        self.protein_entry.pack(side='left', padx=10)
+        
+        leukocytes_frame = tk.Frame(right_frame)
+        leukocytes_frame.pack(fill='x', pady=5)
+        tk.Label(leukocytes_frame, text="(в п/зр) Лейкоциты:", font=('Arial', 14), width=20, anchor='w').pack(side='left')
+        self.leukocytes_urine_entry = tk.Entry(leukocytes_frame, font=('Arial', 14), width=12)
+        self.leukocytes_urine_entry.pack(side='left', padx=10)
         
         # Кнопки управления
         buttons_frame = tk.Frame(right_frame)
@@ -529,9 +550,10 @@ class PatientCard:
         left_frame.pack(side='left', fill='both', expand=True, padx=10, pady=10)
         
         self.ecg_vars = {}
+        self.ecg_entries = {}
         
-        # Параметры ЭКГ
-        ecg_params = [
+        # Параметры ЭКГ (чекбоксы)
+        ecg_checkbox_params = [
             ("G1 Отклонение", "g1_deviation"),
             ("G2 (лж) Отклонение", "g2_lzh_deviation"),
             ("G3 Отклонение", "g3_deviation"),
@@ -539,7 +561,6 @@ class PatientCard:
             ("G6 (лж) Отклонение", "g6_lzh_deviation"),
             ("G7 Отклонение", "g7_deviation"),
             ("G9 Отклонение", "g9_deviation"),
-            ("Пульс", "pulse"),
             ("Делит QRS отклонение", "qrs_deviation"),
             ("Длит Q-T отклонение", "qt_deviation"),
             ("Длит PQ отклонение", "pq_deviation"),
@@ -548,12 +569,22 @@ class PatientCard:
             ("ВСР отклонение", "bcp_deviation")
         ]
         
-        for param_text, var_name in ecg_params:
+        # Создаем чекбоксы для отклонений
+        for param_text, var_name in ecg_checkbox_params:
             var = tk.BooleanVar()
             self.ecg_vars[var_name] = var
             cb = tk.Checkbutton(left_frame, text=param_text, variable=var,
                                font=('Arial', 14))
             cb.pack(anchor='w', pady=2)
+        
+        # Поле для ввода пульса
+        pulse_frame = tk.Frame(left_frame)
+        pulse_frame.pack(fill='x', pady=5)
+        
+        tk.Label(pulse_frame, text="Пульс (уд/мин):", font=('Arial', 14), width=20, anchor='w').pack(side='left')
+        self.pulse_entry = tk.Entry(pulse_frame, font=('Arial', 14), width=12)
+        self.pulse_entry.pack(side='left', padx=10)
+        self.ecg_entries['pulse'] = self.pulse_entry
         
         # Кнопки управления
         buttons_frame = tk.Frame(left_frame)
@@ -609,15 +640,17 @@ class PatientCard:
             ("ЛА систолическое давление (мм рт.ст.)", "pa_systolic_pressure")
         ]
         
-        # Создание полей в виде таблицы
+        # Создание полей в виде таблицы - поля рядом с названиями
         for i, (param_text, field_name) in enumerate(echo_params):
             row_frame = tk.Frame(main_frame)
-            row_frame.pack(fill='x', pady=3)
+            row_frame.pack(fill='x', pady=5)
             
-            tk.Label(row_frame, text=param_text, font=('Arial', 14), width=40, anchor='w').pack(side='left')
+            # Название параметра
+            tk.Label(row_frame, text=param_text, font=('Arial', 14), width=35, anchor='w').pack(side='left')
             
-            entry = tk.Entry(row_frame, font=('Arial', 14), width=15)
-            entry.pack(side='right', padx=10)
+            # Поле ввода сразу рядом с названием
+            entry = tk.Entry(row_frame, font=('Arial', 14), width=12)
+            entry.pack(side='left', padx=10)
             self.echo_fields[field_name] = entry
         
         # Кнопки управления
@@ -806,10 +839,10 @@ class PatientCard:
     
     def clear_urine_test_data(self):
         """Очистка данных анализа мочи"""
-        # Очищаем чекбоксы
-        if hasattr(self, 'urine_test_vars'):
-            for var in self.urine_test_vars.values():
-                var.set(False)
+        # Очищаем выпадающие списки
+        if hasattr(self, 'urine_combos'):
+            for combo in self.urine_combos.values():
+                combo.set('Не выбрано')
         
         # Очищаем поля ввода
         if hasattr(self, 'protein_entry'):
@@ -824,6 +857,10 @@ class PatientCard:
         if hasattr(self, 'ecg_vars'):
             for var in self.ecg_vars.values():
                 var.set(False)
+        
+        # Очищаем поле пульса
+        if hasattr(self, 'pulse_entry'):
+            self.pulse_entry.delete(0, tk.END)
         
         messagebox.showinfo("Информация", "Данные ЭКГ очищены")
     

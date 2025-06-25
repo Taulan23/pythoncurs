@@ -76,14 +76,38 @@ class MedicalDataManager:
             conn = sqlite3.connect('medical_system.db')
             cursor = conn.cursor()
             
-            # Удаляем старые данные если есть
-            cursor.execute("DELETE FROM urine_tests WHERE patient_id=?", (self.parent_app.current_patient_id,))
+            # Создаем обновленную таблицу для анализа мочи если нужно
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS urine_tests_new (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    patient_id INTEGER,
+                    transparency TEXT,
+                    color TEXT,
+                    status TEXT,
+                    protein_value REAL,
+                    leukocytes_value REAL,
+                    FOREIGN KEY (patient_id) REFERENCES patients (id)
+                )
+            ''')
             
-            # Получаем данные из чекбоксов
-            checkbox_data = {}
-            if hasattr(self.parent_card, 'urine_test_vars'):
-                for var_name, var in self.parent_card.urine_test_vars.items():
-                    checkbox_data[var_name] = 1 if var.get() else 0
+            # Удаляем старые данные если есть
+            cursor.execute("DELETE FROM urine_tests_new WHERE patient_id=?", (self.parent_app.current_patient_id,))
+            
+            # Получаем данные из выпадающих списков
+            transparency = None
+            color = None
+            status = None
+            
+            if hasattr(self.parent_card, 'urine_combos'):
+                transparency = self.parent_card.urine_combos['transparency'].get()
+                color = self.parent_card.urine_combos['color'].get()
+                status = self.parent_card.urine_combos['status'].get()
+                
+                # Заменяем "Не выбрано" на None
+                if transparency == 'Не выбрано':
+                    transparency = None
+                if color == 'Не выбрано':
+                    color = None
             
             # Получаем данные из полей ввода
             protein_value = None
@@ -99,17 +123,14 @@ class MedicalDataManager:
             
             # Сохраняем в БД
             cursor.execute("""
-                INSERT INTO urine_tests (
-                    patient_id, analysis_not_performed, transparent_urine, cloudy_urine,
-                    light_yellow_urine, dark_yellow_urine, protein_presence, leukocytes_presence
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO urine_tests_new (
+                    patient_id, transparency, color, status, protein_value, leukocytes_value
+                ) VALUES (?, ?, ?, ?, ?, ?)
             """, (
                 self.parent_app.current_patient_id,
-                checkbox_data.get('analysis_not_performed', 0),
-                checkbox_data.get('transparent_urine', 0),
-                checkbox_data.get('cloudy_urine', 0),
-                checkbox_data.get('light_yellow_urine', 0),
-                checkbox_data.get('dark_yellow_urine', 0),
+                transparency,
+                color,
+                status,
                 protein_value,
                 leukocytes_value
             ))
@@ -134,21 +155,31 @@ class MedicalDataManager:
             # Удаляем старые данные если есть
             cursor.execute("DELETE FROM ecg_data WHERE patient_id=?", (self.parent_app.current_patient_id,))
             
-            # Получаем данные из чекбоксов
-            ecg_values = []
-            ecg_fields = ['g1_deviation', 'g2_lzh_deviation', 'g3_deviation', 'g3_lzh_deviation',
-                         'g6_lzh_deviation', 'g7_deviation', 'g9_deviation', 'pulse',
-                         'qrs_deviation', 'qt_deviation', 'pq_deviation', 'p_deviation',
-                         't_normal', 'bcp_deviation']
+            # Получаем данные из чекбоксов (без пульса)
+            ecg_checkbox_fields = ['g1_deviation', 'g2_lzh_deviation', 'g3_deviation', 'g3_lzh_deviation',
+                                  'g6_lzh_deviation', 'g7_deviation', 'g9_deviation',
+                                  'qrs_deviation', 'qt_deviation', 'pq_deviation', 'p_deviation',
+                                  't_normal', 'bcp_deviation']
             
+            ecg_values = []
             if hasattr(self.parent_card, 'ecg_vars'):
-                for field_name in ecg_fields:
+                for field_name in ecg_checkbox_fields:
                     if field_name in self.parent_card.ecg_vars:
                         ecg_values.append(1 if self.parent_card.ecg_vars[field_name].get() else 0)
                     else:
                         ecg_values.append(0)
             else:
-                ecg_values = [0] * len(ecg_fields)
+                ecg_values = [0] * len(ecg_checkbox_fields)
+            
+            # Получаем значение пульса
+            pulse_value = None
+            if hasattr(self.parent_card, 'pulse_entry'):
+                try:
+                    pulse_text = self.parent_card.pulse_entry.get().strip()
+                    if pulse_text:
+                        pulse_value = int(pulse_text)
+                except ValueError:
+                    pulse_value = None
             
             # Сохраняем в БД
             cursor.execute("""
@@ -157,7 +188,7 @@ class MedicalDataManager:
                     g6_lzh_deviation, g7_deviation, g9_deviation, pulse, qrs_deviation,
                     qt_deviation, pq_deviation, p_deviation, t_normal, bcp_deviation
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """, tuple([self.parent_app.current_patient_id] + ecg_values))
+            """, tuple([self.parent_app.current_patient_id] + ecg_values[:7] + [pulse_value] + ecg_values[7:]))
             
             conn.commit()
             conn.close()
@@ -531,28 +562,31 @@ class MedicalDataManager:
             conn = sqlite3.connect('medical_system.db')
             cursor = conn.cursor()
             
-            cursor.execute("SELECT * FROM urine_tests WHERE patient_id=?", (self.parent_app.current_patient_id,))
+            cursor.execute("SELECT * FROM urine_tests_new WHERE patient_id=?", (self.parent_app.current_patient_id,))
             urine_data = cursor.fetchone()
             
             if urine_data:
-                # Загружаем чекбоксы
-                urine_checkboxes = ['not_conducted', 'clear', 'cloudy', 'light_yellow', 'dark_yellow']
-                if hasattr(self.parent_card, 'urine_vars'):
-                    for i, field_name in enumerate(urine_checkboxes):
-                        if field_name in self.parent_card.urine_vars:
-                            self.parent_card.urine_vars[field_name].set(bool(urine_data[i+2]))
+                # Загружаем данные из выпадающих списков
+                if hasattr(self.parent_card, 'urine_combos'):
+                    # transparency, color, status находятся в позициях 2, 3, 4
+                    transparency = urine_data[2] if urine_data[2] else 'Не выбрано'
+                    color = urine_data[3] if urine_data[3] else 'Не выбрано'
+                    status = urine_data[4] if urine_data[4] else 'Проведен'
+                    
+                    self.parent_card.urine_combos['transparency'].set(transparency)
+                    self.parent_card.urine_combos['color'].set(color)
+                    self.parent_card.urine_combos['status'].set(status)
                 
                 # Загружаем числовые поля
-                if hasattr(self.parent_card, 'urine_fields'):
-                    if 'protein' in self.parent_card.urine_fields:
-                        protein_value = urine_data[7] if urine_data[7] is not None else ""
-                        self.parent_card.urine_fields['protein'].delete(0, tk.END)
-                        self.parent_card.urine_fields['protein'].insert(0, str(protein_value))
-                    
-                    if 'leukocytes' in self.parent_card.urine_fields:
-                        leukocytes_value = urine_data[8] if urine_data[8] is not None else ""
-                        self.parent_card.urine_fields['leukocytes'].delete(0, tk.END)
-                        self.parent_card.urine_fields['leukocytes'].insert(0, str(leukocytes_value))
+                if hasattr(self.parent_card, 'protein_entry'):
+                    protein_value = urine_data[5] if urine_data[5] is not None else ""
+                    self.parent_card.protein_entry.delete(0, tk.END)
+                    self.parent_card.protein_entry.insert(0, str(protein_value))
+                
+                if hasattr(self.parent_card, 'leukocytes_urine_entry'):
+                    leukocytes_value = urine_data[6] if urine_data[6] is not None else ""
+                    self.parent_card.leukocytes_urine_entry.delete(0, tk.END)
+                    self.parent_card.leukocytes_urine_entry.insert(0, str(leukocytes_value))
                 
                 messagebox.showinfo("Успех", "Данные анализов мочи загружены!")
             else:
@@ -577,12 +611,28 @@ class MedicalDataManager:
             ecg_data = cursor.fetchone()
             
             if ecg_data:
-                # Загружаем чекбоксы ЭКГ
-                ecg_fields = ['g1', 'g2_lv', 'g3', 'g3_lv', 'g6_lv', 'g7', 'g9', 'qrs', 'qt', 'pq', 'p', 'vsr']
+                # Загружаем чекбоксы ЭКГ (без пульса)
+                ecg_checkbox_fields = ['g1_deviation', 'g2_lzh_deviation', 'g3_deviation', 'g3_lzh_deviation',
+                                      'g6_lzh_deviation', 'g7_deviation', 'g9_deviation',
+                                      'qrs_deviation', 'qt_deviation', 'pq_deviation', 'p_deviation',
+                                      't_normal', 'bcp_deviation']
+                
                 if hasattr(self.parent_card, 'ecg_vars'):
-                    for i, field_name in enumerate(ecg_fields):
-                        if field_name in self.parent_card.ecg_vars:
-                            self.parent_card.ecg_vars[field_name].set(bool(ecg_data[i+2]))
+                    # Загружаем первые 7 чекбоксов
+                    for i in range(7):
+                        if i < len(ecg_checkbox_fields) and ecg_checkbox_fields[i] in self.parent_card.ecg_vars:
+                            self.parent_card.ecg_vars[ecg_checkbox_fields[i]].set(bool(ecg_data[i+2]))
+                    
+                    # Пропускаем поле пульса (индекс 8) и загружаем остальные чекбоксы
+                    for i in range(7, len(ecg_checkbox_fields)):
+                        if ecg_checkbox_fields[i] in self.parent_card.ecg_vars:
+                            self.parent_card.ecg_vars[ecg_checkbox_fields[i]].set(bool(ecg_data[i+3]))  # +3 потому что пропускаем пульс
+                
+                # Загружаем значение пульса
+                if hasattr(self.parent_card, 'pulse_entry'):
+                    pulse_value = ecg_data[9] if len(ecg_data) > 9 and ecg_data[9] is not None else ""  # пульс в позиции 9
+                    self.parent_card.pulse_entry.delete(0, tk.END)
+                    self.parent_card.pulse_entry.insert(0, str(pulse_value))
                 
                 messagebox.showinfo("Успех", "Данные ЭКГ загружены!")
             else:

@@ -235,7 +235,7 @@ class MedicalSystemApp:
             widget.destroy()
         
         # Заголовок
-        title_frame = tk.Frame(self.root, bg='lightblue', height=100)
+        title_frame = tk.Frame(self.root, bg='lightblue', height=150)
         title_frame.pack(fill='x', padx=10, pady=5)
         title_frame.pack_propagate(False)
         
